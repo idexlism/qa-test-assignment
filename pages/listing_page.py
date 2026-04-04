@@ -1,0 +1,56 @@
+# pages/listing_page.py
+import re
+from playwright.sync_api import Page, Locator
+
+
+class ListingPage:
+    def __init__(self, page: Page):
+        self.page = page
+
+        # локаторы страницы
+        self.min_price_input: Locator = page.get_by_placeholder("От", exact=True)
+        self.max_price_input: Locator = page.get_by_placeholder("До", exact=True)
+        self.apply_btn: Locator = page.get_by_role("button", name="Применить", exact=True)
+
+    def open(self) -> None:
+        #Открывает страницу списка
+        self.page.goto("/")
+        self.page.wait_for_load_state("networkidle")
+
+    def set_price_range(self, min_val: int, max_val: int) -> None:
+        #Устанавливает диапазон цен и применяет фильтр
+        self.min_price_input.clear()
+        self.min_price_input.fill(str(min_val))
+        self.max_price_input.clear()
+        self.max_price_input.fill(str(max_val))
+        self.page.wait_for_load_state("networkidle")
+        self.page.wait_for_timeout(1000)  # даём время на перерисовку
+
+    def get_all_prices(self) -> list[int]:
+        # Ждём появления хотя бы одной цены
+        price_locator = self.page.locator(
+            "xpath=//*[@class='_card__price_15fhn_241']"
+        ).filter(visible=True)
+
+        # Ждём появления хотя бы одной цены
+        try:
+            price_locator.first.wait_for(state="visible", timeout=5000)
+        except Exception:
+            return []
+
+        count = price_locator.count()
+
+        prices = []
+        for i in range(count):
+            try:
+                element = price_locator.nth(i)
+                raw_text = element.inner_text(timeout=2000)
+                clean_price = re.sub(r'[^\d]', '', raw_text)
+                if clean_price:
+                    prices.append(int(clean_price))
+            except Exception as e:
+                print(f"Не удалось прочитать цену #{i}: {e}")
+                continue
+
+        return prices
+
