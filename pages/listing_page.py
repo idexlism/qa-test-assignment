@@ -7,10 +7,15 @@ class ListingPage:
     def __init__(self, page: Page):
         self.page = page
 
-        # локаторы страницы
+        # локаторы фильтра
         self.min_price_input: Locator = page.get_by_placeholder("От", exact=True)
         self.max_price_input: Locator = page.get_by_placeholder("До", exact=True)
         self.apply_btn: Locator = page.get_by_role("button", name="Применить", exact=True)
+
+        # локаторы сортировки
+        self.sort_by_dropdown: Locator = page.locator("//label[contains(text(), 'Сортировать по')]/following-sibling::select")
+        self.order_dropdown: Locator = page.locator("//label[contains(text(), 'Порядок')]/following-sibling::select")
+
 
     def open(self) -> None:
         #Открывает страницу списка
@@ -25,6 +30,35 @@ class ListingPage:
         self.max_price_input.fill(str(max_val))
         self.page.wait_for_load_state("networkidle")
         self.page.wait_for_timeout(1000)  # даём время на перерисовку
+
+    def set_sorting(self, sort_by: str = "Цена", order: str = "По возрастанию") -> None:
+        """
+        Args:
+            sort_by: "Цена", "Дате создания", "Приоритету"
+            order: "По возрастанию", "По убыванию"
+        """
+        # Открываем dropdown "Сортировать по"
+        self.sort_by_dropdown.click()
+
+        # 1. Выбираем критерий сортировки
+        if sort_by == "Цена":
+            self.sort_by_dropdown.select_option(value="price")
+        elif sort_by == "Дате создания":
+            self.sort_by_dropdown.select_option(value="createdAt")
+        elif sort_by == "Приоритету":
+            self.sort_by_dropdown.select_option(value="priority")
+
+        # 2. Выбираем порядок
+        if order == "По возрастанию":
+            self.order_dropdown.select_option(value="asc")
+        else:
+            self.order_dropdown.select_option(value="desc")
+
+        self.page.wait_for_load_state("networkidle")
+        self.page.wait_for_timeout(1000)
+
+        print(f"Сортировка установлена")
+
 
     def get_all_prices(self) -> list[int]:
         # Ждём появления хотя бы одной цены
