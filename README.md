@@ -1,6 +1,9 @@
 # qa-test-assignment
 Тестовое задание на стажировку QA - Автоматизация тестирования
 
+## Задание 1: Скриншот с багами
+Найденные дефекты оформлены в файле: [bugs.md](https://github.com/idexlism/qa-test-assignment/blob/main/BUGS.md)
+
 ## Задание 2.2: Тесты UI
 
 ### Требования
