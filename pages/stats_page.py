@@ -1,6 +1,6 @@
 # pages/stats_page.py
 import re
-from playwright.sync_api import Page, Locator, Error
+from playwright.sync_api import Page, Locator, Error, expect
 
 
 class StatsPage:
@@ -24,6 +24,9 @@ class StatsPage:
         self.auto_update_status: Locator = page.locator(
             "//*[contains(text(), 'Автообновление выключено')]"
         ).first
+
+        # локатор для смены темы
+        self.theme_toggle: Locator = page.locator("//*[contains(@class, '_themeToggle_127us_1')]")
 
     def open(self) -> None:
         #Открывает страницу статистики
@@ -93,7 +96,7 @@ class StatsPage:
         except Exception:
             # Фоллбэк: проверяем по тексту/иконке
             btn_content = self.play_pause_btn.inner_text().lower()
-            return "▶" in btn_content or "play" in btn_content
+            return "play" in btn_content
 
     def is_pause_button(self) -> bool:
         # Проверяет, отображается ли кнопка как Pause
@@ -104,4 +107,29 @@ class StatsPage:
             )
         except Exception:
             btn_content = self.play_pause_btn.inner_text().lower()
-            return "⏸" in btn_content or "pause" in btn_content
+            return "stop" in btn_content or "pause" in btn_content
+
+    def set_theme(self, is_dark: bool) -> None:
+
+        # Переключает тему, если текущее состояние не совпадает с целевым.
+        # :param is_dark: True - включить темную, False - включить светлую
+
+        # 1. Проверяем, нужна ли вообще смена темы
+        current_is_dark = self.is_dark_theme()
+
+        if current_is_dark != is_dark:
+            # 2. Если состояние отличается — кликаем по кнопке
+            self.theme_toggle.click()
+
+            # Ждем, пока атрибут data-theme обновится на <html>
+            if is_dark:
+                expect(self.page.locator("html")).to_have_attribute("data-theme", "dark", timeout=5000)
+            else:
+                expect(self.page.locator("html")).to_have_attribute("data-theme", "light", timeout=5000)
+
+    def is_dark_theme(self) -> bool:
+        # Проверяет тему по атрибуту data-theme у тега <html>
+        # Получаем значение атрибута data-theme
+        theme_value = self.page.locator("html").get_attribute("data-theme")
+        # Возвращаем True, если значение именно "dark"
+        return theme_value == "dark"
