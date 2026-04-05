@@ -1,6 +1,6 @@
 # pages/listing_page.py
 import re
-from playwright.sync_api import Page, Locator
+from playwright.sync_api import Page, Locator, Error
 
 
 class ListingPage:
@@ -32,8 +32,15 @@ class ListingPage:
 
     def open(self) -> None:
         #Открывает страницу списка
-        self.page.goto("/")
+        response = self.page.goto("/")
         self.page.wait_for_load_state("networkidle")
+
+        # Проверяем HTTP статус
+        if response and response.status != 200:
+            raise AssertionError(
+                f"Страница /stats вернула HTTP {response.status}\n"
+                f"URL: {self.page.url}"
+            )
 
     def set_price_range(self, min_val: int, max_val: int) -> None:
         #Устанавливает диапазон цен и применяет фильтр
