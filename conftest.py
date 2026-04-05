@@ -1,6 +1,6 @@
 # conftest.py
 import pytest
-from playwright.sync_api import Page
+from playwright.sync_api import Page, Browser
 from pages.listing_page import ListingPage
 from pages.stats_page import StatsPage
 from datetime import datetime
@@ -15,6 +15,22 @@ def listing_page(page: Page) -> ListingPage:
 def stats_page(page: Page) -> StatsPage:  # ← Добавь эту фикстуру
     #Фикстура для страницы статистики
     return StatsPage(page)
+
+@pytest.fixture
+def mobile_page(browser: Browser, base_url) -> Page:
+    #Фикстура для эмуляции Samsung Galaxy S25
+    context = browser.new_context(
+        base_url=base_url,
+        user_agent="Mozilla/5.0 (Linux; Android 14; Samsung Galaxy S25) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
+        viewport={"width": 360, "height": 780},
+        device_scale_factor=3.0,
+        is_mobile=True,
+        has_touch=True
+    )
+    page = context.new_page()
+    yield page
+    context.close()
+
 
 @pytest.fixture(scope="function")
 def test_report():
