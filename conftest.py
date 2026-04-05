@@ -2,6 +2,7 @@
 import pytest
 from playwright.sync_api import Page
 from pages.listing_page import ListingPage
+from pages.stats_page import StatsPage
 from datetime import datetime
 
 
@@ -10,6 +11,10 @@ def listing_page(page: Page) -> ListingPage:
    # Фикстура возвращает инициализированный Page Object
     return ListingPage(page)
 
+@pytest.fixture
+def stats_page(page: Page) -> StatsPage:  # ← Добавь эту фикстуру
+    #Фикстура для страницы статистики
+    return StatsPage(page)
 
 @pytest.fixture(scope="function")
 def test_report():
