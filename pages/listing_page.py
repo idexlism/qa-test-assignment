@@ -18,12 +18,17 @@ class ListingPage:
 
         # локаторы категорий
         self.category_dropdown: Locator = page.locator(
-            "//label[contains(text(), 'Категория')]/following-sibling::select"
-        )
+            "//label[contains(text(), 'Категория')]/following-sibling::select")
         self.reset_filters_btn: Locator = page.get_by_role("button", name="Сбросить", exact=True)
 
         # Локатор для карточки объявления (для извлечения категории)
         self.ad_cards: Locator = page.locator("//*[contains(@class, '_card__price_15fhn_241')]")
+
+        # локатор для "срочно"
+        self.urgent_toggle: Locator = page.locator("//*[contains(@class, '_urgentToggle_h1vv9_1')]")
+        self.urgent_badge: Locator = page.locator(
+            "//*[contains(@class, '_card__priority_15fhn_172') or contains(text(), 'Срочно')]"
+        )
 
     def open(self) -> None:
         #Открывает страницу списка
@@ -80,7 +85,7 @@ class ListingPage:
         self.page.wait_for_timeout(1000)
 
     def reset_filters(self) -> None:
-        """Сбрасывает все фильтры"""
+        #Сбрасывает все фильтры
         if self.reset_filters_btn.is_visible(timeout=2000):
             self.reset_filters_btn.click()
             self.page.wait_for_load_state("networkidle")
@@ -153,8 +158,54 @@ class ListingPage:
         return categories
 
     def get_ads_count(self) -> int:
-        """Возвращает количество отображенных объявлений"""
+        #Возвращает количество отображенных объявлений
         cards = self.page.locator("//*[contains(@class, '_card_')]").filter(visible=True)
+        try:
+            cards.first.wait_for(state="visible", timeout=3000)
+            return cards.count()
+        except Exception:
+            return 0
+
+    def toggle_urgent_only(self, enable: bool = True) -> None:
+        #Включает или выключает тогл 'Только срочные'
+        self.urgent_toggle.wait_for(state="visible", timeout=5000)
+
+        try:
+            is_checked = self.urgent_toggle.get_attribute("aria-checked") == "true"
+        except Exception:
+            is_checked = "active" in self.urgent_toggle.get_attribute("class", "")
+
+        if is_checked != enable:
+            self.urgent_toggle.click()
+            self.page.wait_for_load_state("networkidle")
+            self.page.wait_for_timeout(1000)
+
+    def get_all_ads_urgent_status(self) -> list[bool]:
+        #Возвращает список: является ли каждое объявление срочным
+        cards = self.page.locator("//*[contains(@class, '_card__content_15fhn_90')]").filter(visible=True)
+
+        try:
+            cards.first.wait_for(state="visible", timeout=5000)
+        except Exception:
+            return []
+
+        self.page.wait_for_timeout(1000)
+        count = cards.count()
+
+        statuses = []
+        for i in range(count):
+            card = cards.nth(i)
+            urgent_marker = card.locator("//*[contains(@class, '_card__priority_15fhn_172') or contains(text(), 'Срочно')]").first
+            try:
+                statuses.append(urgent_marker.is_visible(timeout=2000))
+            except Exception:
+                statuses.append(False)
+
+        return statuses
+
+    def get_ads_count(self) -> int:
+        #Возвращает количество отображенных объявлений
+        cards = self.page.locator("//*[contains(@class, '_card__content_15fhn_90')]").filter(visible=True)
         try:
             cards.first.wait_for(state="visible", timeout=3000)
             return cards.count()
